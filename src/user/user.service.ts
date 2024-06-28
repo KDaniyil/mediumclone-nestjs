@@ -53,6 +53,7 @@ export class UserService {
   }
 
   async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
+    const errorResponse = { errors: {} };
     const userByEmail = await this.userRepository.findOne({
       where: {
         email: createUserDto.email,
@@ -65,11 +66,14 @@ export class UserService {
       },
     });
 
+    if (userByEmail) {
+      errorResponse.errors['email'] = 'has already been taken';
+    }
+    if (userByUsername) {
+      errorResponse.errors['username'] = 'has already been taken';
+    }
     if (userByEmail || userByUsername) {
-      throw new HttpException(
-        'User with this email or username already exists',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     const newUser = new UserEntity();
